@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 
+  yaml template to create S3 bucket for hosting a static web application.
+
+  # Replace <myStaticWebBucketName> with an external facing name, no caps
+  # example: mydomain.com
+
+  # Replace <myStaticWebTemplateName> with an alpha-numeric internal logical name
+  # example: myDomainCom
+
+Resources:
+
+  <myStaticWebTemplateName>Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # AWS CloudFormation resource to create an S3 bucket
+      BucketName: <myStaticWebBucketName>
+      AccessControl: PublicRead
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    #DeletionPolicy: Retain
+    
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: CEBucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref <myStaticWebTemplateName>Bucket
+                - /*
+      Bucket: !Ref <myStaticWebTemplateName>Bucket
+  
+
+Outputs:
+  BucketID:
+    Value: !GetAtt <myStaticWebTemplateName>Bucket.Arn
+    Description: URL for website hosted on S3
+    Export:
+      Name: !Sub "${AWS::StackName}-CES3ID"
+  WebsiteURL:
+    Value: !GetAtt <myStaticWebTemplateName>Bucket.WebsiteURL
+    Description: URL for website hosted on S3
+    Export:
+      Name: !Sub "${AWS::StackName}-CES3URL"
+  S3BucketSecureURL:
+    Value: !Join 
+      - ''
+      - - 'https://'
+        - !GetAtt 
+          - <myStaticWebTemplateName>Bucket
+          - DomainName
+    Description: Name of S3 bucket to hold website content
