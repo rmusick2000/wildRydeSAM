@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 
+  wildRydeSAM
+
+  SAM Template for Wild Ryde
+
+Resources:
+
+  WRCognitoUserPool:
+    Type: 'AWS::Cognito::UserPool'
+    Properties:
+      UserPoolName: WiiiildCognitoUserPool
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
+  
+  WRCognitoUserPoolClient:
+    Type: 'AWS::Cognito::UserPoolClient'
+    Properties:
+      UserPoolId: !Ref WRCognitoUserPool
+      ClientName: WildRydeWebApp
+      GenerateSecret: false
+
+  RidesTable:
+    Type: 'AWS::Serverless::SimpleTable'
+    Properties:
+      TableName: Rides
+      PrimaryKey:
+        Name: RideId
+        Type: String
+
+  # SAM implicit API does not handle edge, cors properly. Explicit is
+  #     required, meaning swagger def is required as well.
+  WRAPI:
+    Type: 'AWS::Serverless::Api'
+    Properties:
+      EndpointConfiguration: EDGE
+      #SAM is not fully expanding this as below, leading to mysterious auth failures.
+      #Cors: "'*'"
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'*'"
+      StageName: prod
+      DefinitionBody:
+        swagger: 2.0
+        info:
+          title: Wiiiiiiild
+        schemes:
+          - https
+        paths:
+            /ride:
+              post:
+                produces:
+                - "application/json"
+                responses:
+                  "200":
+                    description: "200 response"
+                    schema:
+                      $ref: "#/definitions/Empty"
+                security:
+                - WildRydesSec: []
+                x-amazon-apigateway-integration:
+                  httpMethod: POST
+                  contentHandling: "CONVERT_TO_TEXT"
+                  type: aws_proxy
+                  uri:
+                    Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WRLambda.Arn}/invocations
+                  responses:
+                    default:
+                      statusCode: "200"
+        securityDefinitions:
+          WildRydesSec:
+            type: "apiKey"
+            name: "Authorization"
+            in: "header"
+            x-amazon-apigateway-authtype: "cognito_user_pools"
+            x-amazon-apigateway-authorizer:
+              providerARNs:
+              - Fn::Sub: ${WRCognitoUserPool.Arn}
+              type: "cognito_user_pools"
+        definitions:
+          Empty:
+            type: "object"
+            title: "Empty Schema"
+
+  WRLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: ./wildRydeApp/lambdaHandler/
+      Handler: RequestUnicorn.handler
+      Runtime: nodejs8.10
+      Description: Git der
+      Events:
+        RideAPI:
+          Type: Api 
+          Properties:
+            RestApiId: !Ref WRAPI
+            Path: /ride
+            Method: post
+            Auth:
+              Authorizer: WildRydesSec
+      Policies:
+       - DynamoDBCrudPolicy:
+          TableName: !Ref RidesTable 
+
+
+Outputs:
+  WebsiteURL:
+    Description: "API Gateway endpoint URL for Prod stage for Ride function"
+    Value: !ImportValue "S3StaticWeb-CES3URL"
+  UserPoolID:
+    Value: !Ref WRCognitoUserPool
+    Description: Cognito user pool id
+  UserPoolClientId:
+    Value: !Ref WRCognitoUserPoolClient
+    Description: wild ryde app id for cognito user pool
+  WildRydeApiExecution:
+    Description: "API Gateway endpoint URL for Prod stage for Ride function"
+    Value: !Sub "https://${WRAPI}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  WildRydeLambdadFunction:
+    Description: "Wild Ryde Lambda Function ARN"
+    Value: !GetAtt WRLambda.Arn
+  WRLambdaFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt WRLambdaRole.Arn

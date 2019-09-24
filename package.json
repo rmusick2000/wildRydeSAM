@@ -1,0 +1,8 @@
+{
+  "name": "wildRydeApp",
+  "version": "0.0.1",
+  "main": "RequestUnicorn.js",
+  "dependencies": {
+    "aws-sdk": "latest"
+  }
+}
