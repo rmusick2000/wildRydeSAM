@@ -1,12 +1,12 @@
 # WildRydeSAM
 
-yaml templates for AWS's serverless web app tutorial 'Wild Ryde'.
+YAML templates for AWS's serverless web app tutorial 'Wild Rydes'.
 
-The WildRydes tutorial is a step by step walkthrough of creating a serverless web app for unicorn rides, by using the AWS console.  The tutorial can be found here:
+The Wild Rydes tutorial is a step by step walkthrough of creating a serverless web app for unicorn rides, by using the AWS console.  The tutorial can be found here:
 
 https://aws.amazon.com/getting-started/projects/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/
 
-This project, WildRydes yaml, contains working AWS SAM templates for the WildRydes SAM tutorial above.  The YAML files found here are a SAM template approach to creating the same application from the command line, rather then click-by-click on the aws console.
+This project contains working AWS SAM templates for the Wild Rydes SAM tutorial above.  The YAML files found here are a SAM template approach to creating the same application from the command line, rather then click-by-click on the aws console.
 
 
 ## Files:
