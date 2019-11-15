@@ -99,7 +99,7 @@ Resources:
     Properties:
       CodeUri: ./wildRydeApp/lambdaHandler/
       Handler: RequestUnicorn.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Description: Git der
       Events:
         RideAPI:
